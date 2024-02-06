@@ -11,20 +11,29 @@ $(document).ready(() => {
     constructor(deviceId) {
       this.deviceId = deviceId;
       this.maxLen = 50;
-      this.timeData = new Array(this.maxLen);
-      this.temperatureData = new Array(this.maxLen);
-      this.humidityData = new Array(this.maxLen);
+      this.timeData = [];
+      this.temperatureData = [];
+      this.humidityData = [];
+      this.accelXData = [];
+      this.accelYData = [];
+      this.accelZData = [];
     }
-
-    addData(time, temperature, humidity) {
+  
+    addData(time, temperature, humidity, accelX, accelY, accelZ) {
       this.timeData.push(time);
       this.temperatureData.push(temperature);
       this.humidityData.push(humidity || null);
-
+      this.accelXData.push(accelX || null);
+      this.accelYData.push(accelY || null);
+      this.accelZData.push(accelZ || null);
+  
       if (this.timeData.length > this.maxLen) {
         this.timeData.shift();
         this.temperatureData.shift();
         this.humidityData.shift();
+        this.accelXData.shift();
+        this.accelYData.shift();
+        this.accelZData.shift();
       }
     }
   }
@@ -77,9 +86,43 @@ $(document).ready(() => {
         pointHoverBackgroundColor: 'rgba(24, 120, 240, 1)',
         pointHoverBorderColor: 'rgba(24, 120, 240, 1)',
         spanGaps: true,
-      }
+      },
+      {
+        fill: false,
+        label: 'AccelX',
+        yAxisID: 'AccelX',
+        borderColor: 'rgba(0, 204, 0, 1)',
+        pointBoarderColor: 'rgba(0, 204, 0, 1)',
+        backgroundColor: 'rgba(0, 204, 0, 0.4)',
+        pointHoverBackgroundColor: 'rgba(0, 204, 0, 1)',
+        pointHoverBorderColor: 'rgba(0, 204, 0, 1)',
+        spanGaps: true,
+      },
+      {
+        fill: false,
+        label: 'AccelY',
+        yAxisID: 'AccelY',
+        borderColor: 'rgba(150,  190, 0, 1)',
+        pointBoarderColor: 'rgba(150,  190, 0, 1)',
+        backgroundColor: 'rgba(150,  190, 0, 0.4)',
+        pointHoverBackgroundColor: 'rgba(150,  190, 0, 1)',
+        pointHoverBorderColor: 'rgba(150,  190, 0, 1)',
+        spanGaps: true,
+      },
+      {
+        fill: false,
+        label: 'AccelZ',
+        yAxisID: 'AccelZ',
+        borderColor: 'rgba(200, 180, 0, 1)',
+        pointBoarderColor: 'rgba(200, 180, 0, 1)',
+        backgroundColor: 'rgba(200, 180, 0, 0.4)',
+        pointHoverBackgroundColor: 'rgba(200, 180, 0, 1)',
+        pointHoverBorderColor: 'rgba(200, 180, 0, 1)',
+        spanGaps: true,
+      },
     ]
   };
+
 
   const chartOptions = {
     scales: {
@@ -92,16 +135,54 @@ $(document).ready(() => {
         },
         position: 'left',
         ticks: {
-          suggestedMin: 0,
-          suggestedMax: 100,
+          suggestedMin: 15,
+          suggestedMax: 35,
           beginAtZero: true
-        }
-      },
+        }},
       {
         id: 'Humidity',
         type: 'linear',
         scaleLabel: {
           labelString: 'Humidity (%)',
+          display: true,
+        },
+        position: 'left',
+        ticks: {
+          suggestedMin: 0,
+          suggestedMax: 100,
+          beginAtZero: true
+        }},
+      {
+        id: 'AccelX',
+        type: 'linear',
+        scaleLabel: {
+          labelString: 'AccelX',
+          display: true,
+        },
+        position: 'right',
+        ticks: {
+          suggestedMin: 0,
+          suggestedMax: 100,
+          beginAtZero: true
+        }},
+      {
+        id: 'AccelY',
+        type: 'linear',
+        scaleLabel: {
+          labelString: 'AccelY',
+          display: true,
+        },
+        position: 'right',
+        ticks: {
+          suggestedMin: 0,
+          suggestedMax: 100,
+          beginAtZero: true
+        }},
+      {
+        id: 'AccelZ',
+        type: 'linear',
+        scaleLabel: {
+          labelString: 'AccelZ',
           display: true,
         },
         position: 'right',
@@ -134,6 +215,13 @@ $(document).ready(() => {
     chartData.labels = device.timeData;
     chartData.datasets[0].data = device.temperatureData;
     chartData.datasets[1].data = device.humidityData;
+    chartData.datasets[2].data = device.accelXData;
+    chartData.datasets[3].data = device.accelYData;
+    chartData.datasets[4].data = device.accelZData;
+
+    console.log('## chartData');
+    console.log(chartData);
+
     myLineChart.update();
   }
   listOfDevices.addEventListener('change', OnSelectionChange, false);
@@ -145,12 +233,15 @@ $(document).ready(() => {
   // 4. Append the telemetry data
   // 5. Update the chart UI
   webSocket.onmessage = function onMessage(message) {
+    console.log('## onmwebSocket.onmessageessage');
     try {
+      console.log('## on message before parse: %s', message.data)
       const messageData = JSON.parse(message.data);
       console.log(messageData);
 
       // time and either temperature or humidity are required
       if (!messageData.MessageDate || (!messageData.IotData.temperature && !messageData.IotData.humidity)) {
+        console.log('#### chart: ignore. ');
         return;
       }
 
@@ -158,27 +249,37 @@ $(document).ready(() => {
       const existingDeviceData = trackedDevices.findDevice(messageData.DeviceId);
 
       if (existingDeviceData) {
-        existingDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity);
+        console.log('## existingDeviceData');
+        console.log('## existingDeviceData. %i, %i, %i, %i, %i', messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.accelx, messageData.IotData.accely, messageData.IotData.accelz);
+        existingDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.accelx, messageData.IotData.accely, messageData.IotData.accelz);
+        console.log('## addData');
       } else {
+        console.log('## newDeviceData');
         const newDeviceData = new DeviceData(messageData.DeviceId);
         trackedDevices.devices.push(newDeviceData);
         const numDevices = trackedDevices.getDevicesCount();
         deviceCount.innerText = numDevices === 1 ? `${numDevices} device` : `${numDevices} devices`;
-        newDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity);
+        newDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.accelx, messageData.IotData.accely, messageData.IotData.accelz);
+        console.log('## addData');
 
         // add device to the UI list
         const node = document.createElement('option');
         const nodeText = document.createTextNode(messageData.DeviceId);
         node.appendChild(nodeText);
         listOfDevices.appendChild(node);
+        console.log('## appendChild');
 
         // if this is the first device being discovered, auto-select it
         if (needsAutoSelect) {
           needsAutoSelect = false;
           listOfDevices.selectedIndex = 0;
+          console.log('## gonna OnSelectionChange');
           OnSelectionChange();
+          console.log('## OnSelectionChange');
         }
       }
+      console.log('##');
+      console.log(existingDeviceData);
 
       myLineChart.update();
     } catch (err) {

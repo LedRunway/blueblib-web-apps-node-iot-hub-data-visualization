@@ -4,14 +4,16 @@ const WebSocket = require('ws');
 const path = require('path');
 const EventHubReader = require('./scripts/event-hub-reader.js');
 
-const iotHubConnectionString = process.env.IotHubConnectionString;
+//const iotHubConnectionString = process.env.IotHubConnectionString;
+const iotHubConnectionString = 'HostName=iot-hub-nord.azure-devices.net;SharedAccessKeyName=service;SharedAccessKey=AijpbCQy/DctQjfhs6U3y0FhIPBwgY4CeAIoTKBQpkA=';
 if (!iotHubConnectionString) {
   console.error(`Environment variable IotHubConnectionString must be specified.`);
   return;
 }
 console.log(`Using IoT Hub connection string [${iotHubConnectionString}]`);
 
-const eventHubConsumerGroup = process.env.EventHubConsumerGroup;
+//const eventHubConsumerGroup = process.env.EventHubConsumerGroup;
+const eventHubConsumerGroup = 'iot-hub-nord-consm-grp';
 console.log(eventHubConsumerGroup);
 if (!eventHubConsumerGroup) {
   console.error(`Environment variable EventHubConsumerGroup must be specified.`);
@@ -33,7 +35,7 @@ wss.broadcast = (data) => {
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       try {
-        console.log(`Broadcasting data ${data}`);
+        console.log(`server.js: wss.broadcast: Broadcasting data ${data}`);
         client.send(data);
       } catch (e) {
         console.error(e);
@@ -50,6 +52,7 @@ const eventHubReader = new EventHubReader(iotHubConnectionString, eventHubConsum
 
 (async () => {
   await eventHubReader.startReadMessage((message, date, deviceId) => {
+    console.log('await eventHubReader.startReadMessage. message:%s', message);
     try {
       const payload = {
         IotData: message,
