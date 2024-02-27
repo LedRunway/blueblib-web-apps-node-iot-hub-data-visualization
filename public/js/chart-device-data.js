@@ -13,16 +13,16 @@ $(document).ready(() => {
       this.maxLen = 50;
       this.timeData = [];
       this.temperatureData = [];
-      this.humidityData = [];
+      this.pressureData = [];
       this.accelXData = [];
       this.accelYData = [];
       this.accelZData = [];
     }
   
-    addData(time, temperature, humidity, accelX, accelY, accelZ) {
+    addData(time, temperature, pressure, accelX, accelY, accelZ) {
       this.timeData.push(time);
       this.temperatureData.push(temperature);
-      this.humidityData.push(humidity || null);
+      this.pressureData.push(pressure || null);
       this.accelXData.push(accelX || null);
       this.accelYData.push(accelY || null);
       this.accelZData.push(accelZ || null);
@@ -30,7 +30,7 @@ $(document).ready(() => {
       if (this.timeData.length > this.maxLen) {
         this.timeData.shift();
         this.temperatureData.shift();
-        this.humidityData.shift();
+        this.pressureData.shift();
         this.accelXData.shift();
         this.accelYData.shift();
         this.accelZData.shift();
@@ -78,8 +78,8 @@ $(document).ready(() => {
       },
       {
         fill: false,
-        label: 'Humidity',
-        yAxisID: 'Humidity',
+        label: 'Pressure',
+        yAxisID: 'Pressure',
         borderColor: 'rgba(24, 120, 240, 1)',
         pointBoarderColor: 'rgba(24, 120, 240, 1)',
         backgroundColor: 'rgba(24, 120, 240, 0.4)',
@@ -135,21 +135,21 @@ $(document).ready(() => {
         },
         position: 'left',
         ticks: {
-          suggestedMin: 15,
-          suggestedMax: 35,
+          suggestedMin: 20,
+          suggestedMax: 30,
           beginAtZero: true
         }},
       {
-        id: 'Humidity',
+        id: 'Pressure',
         type: 'linear',
         scaleLabel: {
-          labelString: 'Humidity (%)',
+          labelString: 'Pressure',
           display: true,
         },
         position: 'left',
         ticks: {
-          suggestedMin: 0,
-          suggestedMax: 100,
+          suggestedMin: 900,
+          suggestedMax: 1100,
           beginAtZero: true
         }},
       {
@@ -161,8 +161,8 @@ $(document).ready(() => {
         },
         position: 'right',
         ticks: {
-          suggestedMin: 0,
-          suggestedMax: 100,
+          suggestedMin: -10,
+          suggestedMax: 10,
           beginAtZero: true
         }},
       {
@@ -174,8 +174,8 @@ $(document).ready(() => {
         },
         position: 'right',
         ticks: {
-          suggestedMin: 0,
-          suggestedMax: 100,
+          suggestedMin: -10,
+          suggestedMax: 10,
           beginAtZero: true
         }},
       {
@@ -187,8 +187,8 @@ $(document).ready(() => {
         },
         position: 'right',
         ticks: {
-          suggestedMin: 0,
-          suggestedMax: 100,
+          suggestedMin: -10,
+          suggestedMax: 10,
           beginAtZero: true
         }
       }]
@@ -214,7 +214,7 @@ $(document).ready(() => {
     const device = trackedDevices.findDevice(listOfDevices[listOfDevices.selectedIndex].text);
     chartData.labels = device.timeData;
     chartData.datasets[0].data = device.temperatureData;
-    chartData.datasets[1].data = device.humidityData;
+    chartData.datasets[1].data = device.pressureData;
     chartData.datasets[2].data = device.accelXData;
     chartData.datasets[3].data = device.accelYData;
     chartData.datasets[4].data = device.accelZData;
@@ -239,19 +239,25 @@ $(document).ready(() => {
       const messageData = JSON.parse(message.data);
       console.log(messageData);
 
-      // time and either temperature or humidity are required
-      if (!messageData.MessageDate || (!messageData.IotData.temperature && !messageData.IotData.humidity)) {
+      ax = 0; if (messageData.IotData.accelerometer) {ax = messageData.IotData.accelerometer.X;}
+      ay = 0; if (messageData.IotData.accelerometer) {ay = messageData.IotData.accelerometer.Y;}
+      az = 0; if (messageData.IotData.accelerometer) {az = messageData.IotData.accelerometer.Z;}
+      pr = messageData.IotData.pressure;
+      te = messageData.IotData.temperature;
+
+      // time and either temperature or pressure are required
+     /* if (!messageData.MessageDate || (!te && !pr)) {
         console.log('#### chart: ignore. ');
         return;
-      }
+      }*/
 
       // find or add device to list of tracked devices
       const existingDeviceData = trackedDevices.findDevice(messageData.DeviceId);
 
       if (existingDeviceData) {
         console.log('## existingDeviceData');
-        console.log('## existingDeviceData. %i, %i, %i, %i, %i', messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.accelx, messageData.IotData.accely, messageData.IotData.accelz);
-        existingDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.accelx, messageData.IotData.accely, messageData.IotData.accelz);
+        console.log('## existingDeviceData. %i, %i, %i, %i, %i', te, pr, ax, ay, az);
+        existingDeviceData.addData(messageData.MessageDate, te, pr, ax, ay, az);
         console.log('## addData');
       } else {
         console.log('## newDeviceData');
@@ -259,7 +265,7 @@ $(document).ready(() => {
         trackedDevices.devices.push(newDeviceData);
         const numDevices = trackedDevices.getDevicesCount();
         deviceCount.innerText = numDevices === 1 ? `${numDevices} device` : `${numDevices} devices`;
-        newDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.accelx, messageData.IotData.accely, messageData.IotData.accelz);
+        newDeviceData.addData(messageData.MessageDate, te, pr, ax, ay, az);
         console.log('## addData');
 
         // add device to the UI list
