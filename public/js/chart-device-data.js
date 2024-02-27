@@ -161,8 +161,8 @@ $(document).ready(() => {
         },
         position: 'right',
         ticks: {
-          suggestedMin: 0,
-          suggestedMax: 100,
+          suggestedMin: -1000,
+          suggestedMax: 1000,
           beginAtZero: true
         }},
       {
@@ -174,8 +174,8 @@ $(document).ready(() => {
         },
         position: 'right',
         ticks: {
-          suggestedMin: 0,
-          suggestedMax: 100,
+          suggestedMin: -1000,
+          suggestedMax: 1000,
           beginAtZero: true
         }},
       {
@@ -187,8 +187,8 @@ $(document).ready(() => {
         },
         position: 'right',
         ticks: {
-          suggestedMin: 0,
-          suggestedMax: 100,
+          suggestedMin: -1000,
+          suggestedMax: 1000,
           beginAtZero: true
         }
       }]
@@ -240,18 +240,19 @@ $(document).ready(() => {
       console.log(messageData);
 
       // time and either temperature or humidity are required
+      /*
       if (!messageData.MessageDate || (!messageData.IotData.temperature && !messageData.IotData.humidity)) {
         console.log('#### chart: ignore. ');
         return;
-      }
+      }*/
 
       // find or add device to list of tracked devices
       const existingDeviceData = trackedDevices.findDevice(messageData.DeviceId);
 
       if (existingDeviceData) {
         console.log('## existingDeviceData');
-        console.log('## existingDeviceData. %i, %i, %i, %i, %i', messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.accelx, messageData.IotData.accely, messageData.IotData.accelz);
-        existingDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.accelx, messageData.IotData.accely, messageData.IotData.accelz);
+        console.log('## existingDeviceData. %i, %i, %i, %i, %i', messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.accelerometer.X, messageData.IotData.accelerometer.Y, messageData.IotData.accelerometer.Z);
+        existingDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.accelerometer.X, messageData.IotData.accelerometer.Y, messageData.IotData.accelerometer.Z);
         console.log('## addData');
       } else {
         console.log('## newDeviceData');
@@ -259,7 +260,7 @@ $(document).ready(() => {
         trackedDevices.devices.push(newDeviceData);
         const numDevices = trackedDevices.getDevicesCount();
         deviceCount.innerText = numDevices === 1 ? `${numDevices} device` : `${numDevices} devices`;
-        newDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.accelx, messageData.IotData.accely, messageData.IotData.accelz);
+        newDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.accelerometer.X, messageData.IotData.accelerometer.Y, messageData.IotData.accelerometer.Z);
         console.log('## addData');
 
         // add device to the UI list
